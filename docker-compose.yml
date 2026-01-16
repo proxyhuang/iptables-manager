@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    image: ${REGISTRY:-docker.io}/${NAMESPACE:-proxyhuang}/iptables-manager-backend:${VERSION:-latest}
+    container_name: iptables-backend
+    privileged: true
+    network_mode: host
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DB_PATH=/app/data/iptables.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:8080/api/v1/rules"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    image: ${REGISTRY:-docker.io}/${NAMESPACE:-proxyhuang}/iptables-manager-frontend:${VERSION:-latest}
+    container_name: iptables-frontend
+    network_mode: host
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  data:
+    driver: local

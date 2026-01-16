@@ -1,0 +1,52 @@
+# GitLab CI/CD Configuration for IPTables Web Manager
+
+stages:
+  - build
+  - test
+  - deploy
+
+variables:
+  REGISTRY: registry.gitlab.com
+  NAMESPACE: $CI_PROJECT_NAMESPACE
+  VERSION: $CI_COMMIT_TAG
+
+before_script:
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+build:
+  stage: build
+  script:
+    - make build VERSION=${VERSION:-latest} REGISTRY=$REGISTRY NAMESPACE=$NAMESPACE
+  only:
+    - main
+    - develop
+    - tags
+
+test:
+  stage: test
+  script:
+    - make build VERSION=${VERSION:-latest} REGISTRY=$REGISTRY NAMESPACE=$NAMESPACE
+    - make up
+    - sleep 10
+    - make health
+    - make test
+    - make down
+  only:
+    - main
+    - develop
+    - tags
+
+push:
+  stage: deploy
+  script:
+    - make push VERSION=${VERSION:-latest} REGISTRY=$REGISTRY NAMESPACE=$NAMESPACE
+  only:
+    - main
+    - tags
+
+release:
+  stage: deploy
+  script:
+    - make release VERSION=$CI_COMMIT_TAG REGISTRY=$REGISTRY NAMESPACE=$NAMESPACE
+  only:
+    - tags

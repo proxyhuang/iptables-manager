@@ -1,0 +1,2 @@
+# Include user configuration if exists
+-include Makefile.config

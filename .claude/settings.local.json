@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go mod init:*)",
+      "Bash(apt-get update:*)",
+      "Bash(apt-get install:*)",
+      "Bash(go get:*)",
+      "Bash(npx create-react-app frontend --template typescript)",
+      "Bash(npm install:*)",
+      "Bash(chmod:*)",
+      "Bash(tree:*)",
+      "Bash(make help:*)",
+      "Bash(ls:*)",
+      "Bash(npm run build:*)",
+      "Bash(go build:*)",
+      "Bash(curl:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Njg4MDYzNTcsImlhdCI6MTc2ODU0NzE1NywidXNlcm5hbWUiOiJhZG1pbiJ9.ZTL0ouk7l-5G2xLkZQPIhuQWrDEYknnCGenQt6NUq5Q\")",
+      "Bash(python3:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker-compose down:*)"
+    ]
+  }
+}
