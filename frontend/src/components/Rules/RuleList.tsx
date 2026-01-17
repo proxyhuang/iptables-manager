@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Table, Button, Space, Tag, message, Select, Tooltip, Modal } from 'antd';
+import { Table, Button, Space, Tag, message, Select, Tooltip, Modal, Dropdown, Checkbox } from 'antd';
+import type { ColumnsType, ColumnType } from 'antd/es/table';
+import type { FilterValue } from 'antd/es/table/interface';
 import {
   DeleteOutlined,
   ReloadOutlined,
@@ -13,6 +15,7 @@ import {
   ExportOutlined,
   QuestionOutlined,
   ExclamationCircleOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { RootState, AppDispatch } from '../../store/store';
@@ -59,11 +62,52 @@ const chainDirections: Record<string, {
   },
 };
 
+// Column configuration for visibility toggle
+interface ColumnConfig {
+  key: string;
+  title: string;
+  defaultVisible: boolean;
+}
+
+const allColumnConfigs: ColumnConfig[] = [
+  { key: 'line_number', title: '#', defaultVisible: true },
+  { key: 'table', title: 'Table', defaultVisible: true },
+  { key: 'chain', title: 'Chain', defaultVisible: true },
+  { key: 'target', title: 'Target', defaultVisible: true },
+  { key: 'protocol', title: 'Protocol', defaultVisible: true },
+  { key: 'source', title: 'Source', defaultVisible: true },
+  { key: 'destination', title: 'Destination', defaultVisible: true },
+  { key: 'sport', title: 'Src Port', defaultVisible: false },
+  { key: 'dport', title: 'Dst Port', defaultVisible: false },
+  { key: 'packets', title: 'Packets', defaultVisible: true },
+  { key: 'bytes', title: 'Bytes', defaultVisible: true },
+  { key: 'options', title: 'Options', defaultVisible: false },
+  { key: 'raw_rule', title: 'Raw Rule', defaultVisible: false },
+  { key: 'created_at', title: 'Created', defaultVisible: false },
+  { key: 'actions', title: 'Actions', defaultVisible: true },
+];
+
+const COLUMN_VISIBILITY_KEY = 'rule-list-visible-columns';
+
+const getDefaultVisibleColumns = (): string[] => {
+  const stored = localStorage.getItem(COLUMN_VISIBILITY_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      // Invalid JSON, use defaults
+    }
+  }
+  return allColumnConfigs.filter((c) => c.defaultVisible).map((c) => c.key);
+};
+
 export const RuleList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { rules, filteredRules, loading, selectedTable, selectedChain } = useSelector((state: RootState) => state.rules);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(getDefaultVisibleColumns);
+  const [tableFilters, setTableFilters] = useState<Record<string, FilterValue | null>>({});
 
   useEffect(() => {
     dispatch(fetchRules());
@@ -82,6 +126,33 @@ export const RuleList: React.FC = () => {
     const uniqueChains = Array.from(new Set(filteredByTable.map((r) => r.chain)));
     return ['all', ...uniqueChains.sort()];
   }, [rules, selectedTable]);
+
+  // Persist column visibility to localStorage
+  useEffect(() => {
+    localStorage.setItem(COLUMN_VISIBILITY_KEY, JSON.stringify(visibleColumns));
+  }, [visibleColumns]);
+
+  // Generate dynamic filter options from data
+  const filterOptions = useMemo(() => {
+    const uniqueTargets = Array.from(new Set(filteredRules.map((r) => r.target))).sort();
+    const uniqueProtocols = Array.from(new Set(filteredRules.map((r) => r.protocol || 'all'))).sort();
+    const uniqueSources = Array.from(new Set(filteredRules.map((r) => r.source))).sort();
+    const uniqueDestinations = Array.from(new Set(filteredRules.map((r) => r.destination))).sort();
+
+    return {
+      target: uniqueTargets.map((v) => ({ text: v, value: v })),
+      protocol: uniqueProtocols.map((v) => ({ text: v || 'all', value: v })),
+      source: uniqueSources.map((v) => ({ text: v === '0.0.0.0/0' ? 'any' : v, value: v })),
+      destination: uniqueDestinations.map((v) => ({ text: v === '0.0.0.0/0' ? 'any' : v, value: v })),
+    };
+  }, [filteredRules]);
+
+  const handleColumnVisibilityChange = (checkedValues: string[]) => {
+    // Ensure at least one column is visible
+    if (checkedValues.length > 0) {
+      setVisibleColumns(checkedValues);
+    }
+  };
 
   const handleDelete = (rule: Rule) => {
     Modal.confirm({
@@ -229,7 +300,8 @@ export const RuleList: React.FC = () => {
     );
   };
 
-  const columns = [
+  // Define all available columns (wrapped in useMemo to avoid re-creation each render)
+  const allColumns: ColumnsType<Rule> = useMemo(() => [
     {
       title: '#',
       dataIndex: 'line_number',
@@ -298,12 +370,18 @@ export const RuleList: React.FC = () => {
       title: 'Target',
       dataIndex: 'target',
       key: 'target',
+      filters: filterOptions.target,
+      filteredValue: tableFilters.target || null,
+      onFilter: (value, record) => record.target === value,
       render: (target: string) => getTargetTag(target),
     },
     {
       title: 'Protocol',
       dataIndex: 'protocol',
       key: 'protocol',
+      filters: filterOptions.protocol,
+      filteredValue: tableFilters.protocol || null,
+      onFilter: (value, record) => (record.protocol || 'all') === value,
       render: (protocol: string) => (
         <span style={{
           color: 'var(--cyber-text-primary)',
@@ -321,6 +399,9 @@ export const RuleList: React.FC = () => {
       title: 'Source',
       dataIndex: 'source',
       key: 'source',
+      filters: filterOptions.source,
+      filteredValue: tableFilters.source || null,
+      onFilter: (value, record) => record.source === value,
       render: (source: string) => (
         <Tooltip title={source}>
           <span style={{
@@ -339,6 +420,9 @@ export const RuleList: React.FC = () => {
       title: 'Destination',
       dataIndex: 'destination',
       key: 'destination',
+      filters: filterOptions.destination,
+      filteredValue: tableFilters.destination || null,
+      onFilter: (value, record) => record.destination === value,
       render: (destination: string) => (
         <Tooltip title={destination}>
           <span style={{
@@ -351,6 +435,34 @@ export const RuleList: React.FC = () => {
             ) : destination}
           </span>
         </Tooltip>
+      ),
+    },
+    {
+      title: 'Src Port',
+      dataIndex: 'sport',
+      key: 'sport',
+      render: (sport: string) => (
+        <span style={{
+          color: 'var(--cyber-text-primary)',
+          fontFamily: 'monospace',
+          fontSize: '12px',
+        }}>
+          {sport || '-'}
+        </span>
+      ),
+    },
+    {
+      title: 'Dst Port',
+      dataIndex: 'dport',
+      key: 'dport',
+      render: (dport: string) => (
+        <span style={{
+          color: 'var(--cyber-text-primary)',
+          fontFamily: 'monospace',
+          fontSize: '12px',
+        }}>
+          {dport || '-'}
+        </span>
       ),
     },
     {
@@ -382,6 +494,62 @@ export const RuleList: React.FC = () => {
       ),
     },
     {
+      title: 'Options',
+      dataIndex: 'options',
+      key: 'options',
+      ellipsis: true,
+      render: (options: string) => (
+        <Tooltip title={options}>
+          <span style={{
+            color: 'var(--cyber-text-secondary)',
+            fontFamily: 'monospace',
+            fontSize: '11px',
+          }}>
+            {options || '-'}
+          </span>
+        </Tooltip>
+      ),
+    },
+    {
+      title: 'Raw Rule',
+      dataIndex: 'raw_rule',
+      key: 'raw_rule',
+      ellipsis: true,
+      width: 200,
+      render: (raw: string) => (
+        <Tooltip title={raw}>
+          <code style={{
+            color: 'var(--cyber-cyan)',
+            background: 'var(--cyber-bg-secondary)',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            fontSize: '10px',
+            display: 'inline-block',
+            maxWidth: '180px',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            {raw || '-'}
+          </code>
+        </Tooltip>
+      ),
+    },
+    {
+      title: 'Created',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 160,
+      render: (date: string) => (
+        <span style={{
+          color: 'var(--cyber-text-muted)',
+          fontSize: '12px',
+        }}>
+          {date ? new Date(date).toLocaleString() : '-'}
+        </span>
+      ),
+    },
+    {
       title: 'Actions',
       key: 'actions',
       width: 100,
@@ -402,7 +570,16 @@ export const RuleList: React.FC = () => {
         </Button>
       ),
     },
-  ];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [filterOptions, tableFilters]);
+
+  // Filter columns based on visibility
+  const columns = useMemo(() => {
+    return allColumns.filter((col) => {
+      const key = (col as ColumnType<Rule>).key as string;
+      return visibleColumns.includes(key);
+    });
+  }, [visibleColumns, allColumns]);
 
   return (
     <div className="rule-list">
@@ -443,6 +620,57 @@ export const RuleList: React.FC = () => {
               }}
             />
           </Space>
+
+          <Dropdown
+            trigger={['click']}
+            dropdownRender={() => (
+              <div style={{
+                background: 'var(--cyber-bg-card)',
+                border: '1px solid var(--cyber-border)',
+                borderRadius: 8,
+                padding: 12,
+                maxHeight: 400,
+                overflowY: 'auto',
+              }}>
+                <div style={{
+                  marginBottom: 8,
+                  paddingBottom: 8,
+                  borderBottom: '1px solid var(--cyber-border)',
+                  color: 'var(--cyber-text-secondary)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                }}>
+                  Toggle Columns
+                </div>
+                <Checkbox.Group
+                  value={visibleColumns}
+                  onChange={(values) => handleColumnVisibilityChange(values as string[])}
+                  style={{ display: 'flex', flexDirection: 'column', gap: 4 }}
+                >
+                  {allColumnConfigs.map((col) => (
+                    <Checkbox
+                      key={col.key}
+                      value={col.key}
+                      style={{ color: 'var(--cyber-text-primary)', marginLeft: 0 }}
+                    >
+                      {col.title}
+                    </Checkbox>
+                  ))}
+                </Checkbox.Group>
+              </div>
+            )}
+          >
+            <Button
+              icon={<SettingOutlined />}
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--cyber-border)',
+                color: 'var(--cyber-text-primary)',
+              }}
+            >
+              Columns
+            </Button>
+          </Dropdown>
 
           <Button
             icon={<ReloadOutlined spin={loading} />}
@@ -512,6 +740,9 @@ export const RuleList: React.FC = () => {
               Table.SELECTION_INVERT,
               Table.SELECTION_NONE,
             ],
+          }}
+          onChange={(_pagination, filters) => {
+            setTableFilters(filters);
           }}
           pagination={{
             pageSize: 20,

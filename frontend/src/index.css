@@ -15,6 +15,7 @@
   --cyber-red: #ef4444;
   --cyber-orange: #f59e0b;
   --cyber-blue: #3b82f6;
+  --cyber-yellow: #f59e0b;
 
   /* Text Colors */
   --cyber-text-primary: #e2e8f0;
@@ -29,6 +30,51 @@
   --cyber-glow-cyan: 0 0 20px rgba(0, 245, 255, 0.4);
   --cyber-glow-purple: 0 0 20px rgba(168, 85, 247, 0.4);
   --cyber-glow-pink: 0 0 20px rgba(236, 72, 153, 0.4);
+}
+
+/* Light Mode Theme */
+[data-theme="light"] {
+  /* Primary Colors - Light backgrounds */
+  --cyber-bg-primary: #f8fafc;
+  --cyber-bg-secondary: #f1f5f9;
+  --cyber-bg-card: #ffffff;
+  --cyber-bg-hover: #e2e8f0;
+
+  /* Accent Colors - Adjusted for light mode visibility */
+  --cyber-cyan: #0891b2;
+  --cyber-purple: #9333ea;
+  --cyber-pink: #db2777;
+  --cyber-green: #059669;
+  --cyber-red: #dc2626;
+  --cyber-orange: #d97706;
+  --cyber-blue: #2563eb;
+  --cyber-yellow: #ca8a04;
+
+  /* Text Colors - Dark text for light mode */
+  --cyber-text-primary: #0f172a;
+  --cyber-text-secondary: #475569;
+  --cyber-text-muted: #94a3b8;
+
+  /* Border Colors */
+  --cyber-border: #e2e8f0;
+  --cyber-border-glow: rgba(8, 145, 178, 0.3);
+
+  /* Shadows - Subtler for light mode */
+  --cyber-glow-cyan: 0 0 15px rgba(8, 145, 178, 0.25);
+  --cyber-glow-purple: 0 0 15px rgba(147, 51, 234, 0.25);
+  --cyber-glow-pink: 0 0 15px rgba(219, 39, 119, 0.25);
+}
+
+/* Light Mode Body Background */
+[data-theme="light"] body::before {
+  background-image:
+    linear-gradient(rgba(8, 145, 178, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(8, 145, 178, 0.05) 1px, transparent 1px);
+}
+
+[data-theme="light"] body::after {
+  background: radial-gradient(ellipse at top, rgba(8, 145, 178, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at bottom right, rgba(147, 51, 234, 0.06) 0%, transparent 50%);
 }
 
 * {
