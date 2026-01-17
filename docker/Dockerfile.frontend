@@ -1,15 +1,22 @@
+# syntax=docker/dockerfile:1.4
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files first for better layer caching
 COPY frontend/package*.json ./
-RUN npm ci
+
+# Use BuildKit cache mount to cache npm dependencies
+# This dramatically speeds up subsequent builds
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline
 
 # Copy source code
 COPY frontend/ ./
 
-# Build the application
+# Build with cache for node_modules
+# Disable source maps for faster builds in production
+ENV GENERATE_SOURCEMAP=false
 RUN npm run build
 
 # Production stage with nginx

@@ -1,6 +1,7 @@
 # Backend
 backend/iptables.db
 backend/server
+backend/**/*_test.go
 
 # Frontend
 frontend/node_modules
@@ -9,18 +10,25 @@ frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
 frontend/.env.production.local
+frontend/coverage
+frontend/.eslintcache
 
 # Git
 .git
 .gitignore
+.github
 
 # IDE
 .vscode
 .idea
+*.swp
+*.swo
 
 # Logs
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # OS
 .DS_Store
@@ -28,3 +36,22 @@ Thumbs.db
 
 # Docker
 docker-compose.override.yml
+Dockerfile*
+!docker/Dockerfile.backend
+!docker/Dockerfile.frontend
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Backups and data
+backups
+data
+
+# Scripts not needed in build
+scripts
+
+# Makefile
+Makefile
+Makefile.config

@@ -46,27 +46,27 @@ help: ## Show this help message
 	@echo "  Frontend: $(FRONTEND_IMAGE):$(VERSION)"
 
 .PHONY: build
-build: ## Build Docker images
-	@echo "$(COLOR_GREEN)Building Docker images...$(COLOR_RESET)"
-	@REGISTRY=$(REGISTRY) NAMESPACE=$(NAMESPACE) VERSION=$(VERSION) docker compose build
+build: ## Build Docker images (with BuildKit cache)
+	@echo "$(COLOR_GREEN)Building Docker images with BuildKit...$(COLOR_RESET)"
+	@DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 REGISTRY=$(REGISTRY) NAMESPACE=$(NAMESPACE) VERSION=$(VERSION) docker compose build --parallel
 	@echo "$(COLOR_GREEN)✓ Build completed$(COLOR_RESET)"
 
 .PHONY: build-backend
 build-backend: ## Build backend image only
 	@echo "$(COLOR_GREEN)Building backend image...$(COLOR_RESET)"
-	@docker build -f docker/Dockerfile.backend -t $(BACKEND_IMAGE):$(VERSION) .
+	@DOCKER_BUILDKIT=1 docker build -f docker/Dockerfile.backend -t $(BACKEND_IMAGE):$(VERSION) .
 	@echo "$(COLOR_GREEN)✓ Backend build completed$(COLOR_RESET)"
 
 .PHONY: build-frontend
 build-frontend: ## Build frontend image only
 	@echo "$(COLOR_GREEN)Building frontend image...$(COLOR_RESET)"
-	@docker build -f docker/Dockerfile.frontend -t $(FRONTEND_IMAGE):$(VERSION) .
+	@DOCKER_BUILDKIT=1 docker build -f docker/Dockerfile.frontend -t $(FRONTEND_IMAGE):$(VERSION) .
 	@echo "$(COLOR_GREEN)✓ Frontend build completed$(COLOR_RESET)"
 
 .PHONY: build-no-cache
-build-no-cache: ## Build images without cache
+build-no-cache: ## Build images without cache (still uses BuildKit)
 	@echo "$(COLOR_GREEN)Building Docker images (no cache)...$(COLOR_RESET)"
-	@REGISTRY=$(REGISTRY) NAMESPACE=$(NAMESPACE) VERSION=$(VERSION) docker compose build --no-cache
+	@DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 REGISTRY=$(REGISTRY) NAMESPACE=$(NAMESPACE) VERSION=$(VERSION) docker compose build --no-cache --parallel
 	@echo "$(COLOR_GREEN)✓ Build completed$(COLOR_RESET)"
 
 .PHONY: push
@@ -219,7 +219,7 @@ release: ## Create a release (build, tag, push)
 .PHONY: dev
 dev: ## Start in development mode (with logs)
 	@echo "$(COLOR_GREEN)Starting in development mode...$(COLOR_RESET)"
-	@REGISTRY=$(REGISTRY) NAMESPACE=$(NAMESPACE) VERSION=$(VERSION) docker compose up --build
+	@DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 REGISTRY=$(REGISTRY) NAMESPACE=$(NAMESPACE) VERSION=$(VERSION) docker compose up --build
 
 .PHONY: health
 health: ## Check service health

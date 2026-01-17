@@ -1,20 +1,27 @@
+# syntax=docker/dockerfile:1.4
 # Builder stage
 FROM golang:1.22-alpine AS builder
 
 # Set up the working directory
 WORKDIR /app
 
-# Copy the entire backend directory to isolate it
-COPY backend/ ./backend
+# Copy go.mod and go.sum first for better caching
+COPY backend/go.mod backend/go.sum ./backend/
 
 # Change to the module's root directory
 WORKDIR /app/backend
 
-# Download dependencies. This is cached separately.
-RUN go mod download
+# Use BuildKit cache mount for Go modules
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
-# Build the application without CGO, placing the binary in the root of the builder image
-RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/server/main.go
+# Copy source code
+COPY backend/ ./
+
+# Build with cache for Go build cache
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server ./cmd/server/main.go
 
 # Final stage
 FROM alpine:latest

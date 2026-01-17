@@ -18,7 +18,8 @@
       "Bash(python3:*)",
       "Bash(docker-compose up:*)",
       "Bash(docker rm:*)",
-      "Bash(docker-compose down:*)"
+      "Bash(docker-compose down:*)",
+      "Bash(DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker compose build:*)"
     ]
   }
 }

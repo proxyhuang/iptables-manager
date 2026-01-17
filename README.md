@@ -2,6 +2,8 @@
 
 A modern web-based interface for managing and monitoring iptables rules with real-time statistics and visualization.
 
+![UI](./UI.png)
+
 ## 🚀 Quick Start with Docker (Recommended)
 
 ### Option 1: Using Makefile (Best)

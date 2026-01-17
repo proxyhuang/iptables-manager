@@ -1,13 +1,390 @@
+/* Cyber Tech Theme - Global Styles */
+
+:root {
+  /* Primary Colors */
+  --cyber-bg-primary: #0a0e17;
+  --cyber-bg-secondary: #0d1321;
+  --cyber-bg-card: #111827;
+  --cyber-bg-hover: #1a2332;
+
+  /* Accent Colors */
+  --cyber-cyan: #00f5ff;
+  --cyber-purple: #a855f7;
+  --cyber-pink: #ec4899;
+  --cyber-green: #10b981;
+  --cyber-red: #ef4444;
+  --cyber-orange: #f59e0b;
+  --cyber-blue: #3b82f6;
+
+  /* Text Colors */
+  --cyber-text-primary: #e2e8f0;
+  --cyber-text-secondary: #94a3b8;
+  --cyber-text-muted: #64748b;
+
+  /* Border Colors */
+  --cyber-border: #1e293b;
+  --cyber-border-glow: rgba(0, 245, 255, 0.3);
+
+  /* Shadows */
+  --cyber-glow-cyan: 0 0 20px rgba(0, 245, 255, 0.4);
+  --cyber-glow-purple: 0 0 20px rgba(168, 85, 247, 0.4);
+  --cyber-glow-pink: 0 0 20px rgba(236, 72, 153, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--cyber-bg-primary);
+  color: var(--cyber-text-primary);
+  min-height: 100vh;
+}
+
+/* Animated Grid Background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Gradient Overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at top, rgba(0, 245, 255, 0.1) 0%, transparent 50%),
+              radial-gradient(ellipse at bottom right, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#root {
+  position: relative;
+  z-index: 1;
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  background: var(--cyber-bg-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--cyber-cyan);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cyber-bg-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--cyber-cyan), var(--cyber-purple));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--cyber-cyan), var(--cyber-pink));
+}
+
+/* Selection Style */
+::selection {
+  background: rgba(0, 245, 255, 0.3);
+  color: #fff;
+}
+
+/* Ant Design Dark Theme Overrides */
+.ant-layout {
+  background: transparent !important;
+}
+
+.ant-layout-header {
+  background: rgba(13, 19, 33, 0.9) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--cyber-border) !important;
+}
+
+.ant-layout-content {
+  background: transparent !important;
+}
+
+.ant-card {
+  background: var(--cyber-bg-card) !important;
+  border: 1px solid var(--cyber-border) !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-card:hover {
+  border-color: var(--cyber-border-glow) !important;
+  box-shadow: var(--cyber-glow-cyan) !important;
+}
+
+.ant-card-head {
+  background: transparent !important;
+  border-bottom: 1px solid var(--cyber-border) !important;
+  color: var(--cyber-text-primary) !important;
+}
+
+.ant-card-head-title {
+  color: var(--cyber-cyan) !important;
+  font-weight: 600 !important;
+}
+
+.ant-card-body {
+  color: var(--cyber-text-primary) !important;
+}
+
+/* Table Styles */
+.ant-table {
+  background: transparent !important;
+}
+
+.ant-table-thead > tr > th {
+  background: var(--cyber-bg-secondary) !important;
+  color: var(--cyber-cyan) !important;
+  border-bottom: 1px solid var(--cyber-border) !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.ant-table-tbody > tr > td {
+  background: var(--cyber-bg-card) !important;
+  color: var(--cyber-text-primary) !important;
+  border-bottom: 1px solid var(--cyber-border) !important;
+  transition: all 0.2s ease;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--cyber-bg-hover) !important;
+}
+
+.ant-table-tbody > tr.ant-table-row:hover > td {
+  background: rgba(0, 245, 255, 0.05) !important;
+}
+
+/* Input Styles */
+.ant-input,
+.ant-input-password,
+.ant-select-selector {
+  background: var(--cyber-bg-secondary) !important;
+  border: 1px solid var(--cyber-border) !important;
+  color: var(--cyber-text-primary) !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-password:focus,
+.ant-select-focused .ant-select-selector {
+  border-color: var(--cyber-cyan) !important;
+  box-shadow: 0 0 0 2px rgba(0, 245, 255, 0.2) !important;
+}
+
+.ant-input::placeholder {
+  color: var(--cyber-text-muted) !important;
+}
+
+.ant-input-prefix {
+  color: var(--cyber-text-secondary) !important;
+}
+
+/* Select Dropdown */
+.ant-select-dropdown {
+  background: var(--cyber-bg-card) !important;
+  border: 1px solid var(--cyber-border) !important;
+  border-radius: 8px !important;
+}
+
+.ant-select-item {
+  color: var(--cyber-text-primary) !important;
+}
+
+.ant-select-item-option-active {
+  background: var(--cyber-bg-hover) !important;
+}
+
+.ant-select-item-option-selected {
+  background: rgba(0, 245, 255, 0.1) !important;
+  color: var(--cyber-cyan) !important;
+}
+
+/* Button Styles */
+.ant-btn-primary {
+  background: linear-gradient(135deg, var(--cyber-cyan), var(--cyber-blue)) !important;
+  border: none !important;
+  color: var(--cyber-bg-primary) !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, var(--cyber-blue), var(--cyber-cyan)) !important;
+  box-shadow: var(--cyber-glow-cyan) !important;
+  transform: translateY(-1px);
+}
+
+.ant-btn-default {
+  background: var(--cyber-bg-secondary) !important;
+  border: 1px solid var(--cyber-border) !important;
+  color: var(--cyber-text-primary) !important;
+  border-radius: 8px !important;
+}
+
+.ant-btn-default:hover {
+  border-color: var(--cyber-cyan) !important;
+  color: var(--cyber-cyan) !important;
+}
+
+.ant-btn-dangerous {
+  background: transparent !important;
+  border: 1px solid var(--cyber-red) !important;
+  color: var(--cyber-red) !important;
+}
+
+.ant-btn-dangerous:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Tag Styles */
+.ant-tag {
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+  border: none !important;
+}
+
+.ant-tag-blue {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: var(--cyber-blue) !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+.ant-tag-green {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: var(--cyber-green) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.ant-tag-success {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: var(--cyber-green) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.ant-tag-error {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: var(--cyber-red) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Tabs Styles */
+.ant-tabs {
+  color: var(--cyber-text-primary) !important;
+}
+
+.ant-tabs-tab {
+  color: var(--cyber-text-secondary) !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-tabs-tab:hover {
+  color: var(--cyber-cyan) !important;
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: var(--cyber-cyan) !important;
+}
+
+.ant-tabs-ink-bar {
+  background: linear-gradient(90deg, var(--cyber-cyan), var(--cyber-purple)) !important;
+  height: 3px !important;
+  border-radius: 3px !important;
+}
+
+/* Form Styles */
+.ant-form-item-label > label {
+  color: var(--cyber-text-secondary) !important;
+  font-weight: 500 !important;
+}
+
+/* Statistic Styles */
+.ant-statistic-title {
+  color: var(--cyber-text-secondary) !important;
+  font-size: 14px !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.ant-statistic-content {
+  color: var(--cyber-text-primary) !important;
+}
+
+/* Alert Styles */
+.ant-alert-error {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+  border-radius: 8px !important;
+}
+
+/* Pagination */
+.ant-pagination-item {
+  background: var(--cyber-bg-secondary) !important;
+  border: 1px solid var(--cyber-border) !important;
+}
+
+.ant-pagination-item a {
+  color: var(--cyber-text-primary) !important;
+}
+
+.ant-pagination-item-active {
+  border-color: var(--cyber-cyan) !important;
+}
+
+.ant-pagination-item-active a {
+  color: var(--cyber-cyan) !important;
+}
+
+/* Message */
+.ant-message-notice-content {
+  background: var(--cyber-bg-card) !important;
+  border: 1px solid var(--cyber-border) !important;
+  color: var(--cyber-text-primary) !important;
+  border-radius: 8px !important;
+}
+
+/* Spin */
+.ant-spin-dot-item {
+  background: var(--cyber-cyan) !important;
+}
+
+/* Empty */
+.ant-empty-description {
+  color: var(--cyber-text-muted) !important;
 }
