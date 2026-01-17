@@ -10,6 +10,10 @@ test('renders login page when not authenticated', () => {
       <App />
     </Provider>
   );
-  const loginElement = screen.getByText(/Login/i);
-  expect(loginElement).toBeInTheDocument();
+  // With mocked antd components, check for text content and data-testid attributes
+  expect(screen.getByText(/IPTABLES MANAGER/i)).toBeInTheDocument();
+  expect(screen.getByText(/ACCESS SYSTEM/i)).toBeInTheDocument();
+  expect(screen.getByTestId('antd-button')).toBeInTheDocument();
+  expect(screen.getByTestId('antd-input')).toBeInTheDocument();
+  expect(screen.getByTestId('antd-password')).toBeInTheDocument();
 });

@@ -8,85 +8,61 @@ on:
 
 jobs:
   lint-backend:
-    name: Lint Backend
+    name: Lint Backend (Docker)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-
-      - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.55.2
-          working-directory: backend
-
-      - name: Run golangci-lint
+      - name: Run golangci-lint in Docker
         run: |
-          cd backend
-          golangci-lint run ./...
+          docker run --rm \
+            -v $(pwd)/backend:/app \
+            -w /app \
+            golangci/golangci-lint:v1.55.2-alpine \
+            golangci-lint run ./...
 
   test-backend:
-    name: Test Backend
+    name: Test Backend (Docker)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-
-      - name: Run Go tests
+      - name: Run Go tests in Docker
         run: |
-          cd backend
-          go test -v ./...
+          docker run --rm \
+            -v $(pwd)/backend:/app \
+            -w /app \
+            golang:1.22-alpine \
+            go test -v ./...
 
   lint-frontend:
-    name: Lint Frontend
+    name: Lint Frontend (Docker)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ./frontend
-
-      - name: Run ESLint
-        run: npm run lint
-        working-directory: ./frontend
+      - name: Run ESLint in Docker
+        run: |
+          docker run --rm \
+            -v $(pwd)/frontend:/app \
+            -w /app \
+            node:18-alpine \
+            sh -c "npm ci --silent && npm run lint"
 
   test-frontend:
-    name: Test Frontend
+    name: Test Frontend (Docker)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ./frontend
-
-      - name: Run tests
-        run: npm test -- --watchAll=false
-        working-directory: ./frontend
+      - name: Run tests in Docker
+        run: |
+          docker run --rm \
+            -v $(pwd)/frontend:/app \
+            -w /app \
+            node:18-alpine \
+            sh -c "npm ci --silent && npm test -- --watchAll=false"

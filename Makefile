@@ -253,12 +253,45 @@ restore-db: ## Restore database (use FILE=path/to/backup.db)
 	@echo "$(COLOR_GREEN)✓ Database restored$(COLOR_RESET)"
 
 .PHONY: test
-test: ## Run basic tests
+test: ## Run basic API health tests
 	@echo "$(COLOR_GREEN)Running tests...$(COLOR_RESET)"
 	@echo "  Testing backend API..."
 	@curl -s http://localhost:8080/api/v1/rules > /dev/null && echo "  $(COLOR_GREEN)✓ Backend API OK$(COLOR_RESET)" || echo "  $(COLOR_YELLOW)✗ Backend API Failed$(COLOR_RESET)"
 	@echo "  Testing frontend..."
 	@curl -s http://localhost > /dev/null && echo "  $(COLOR_GREEN)✓ Frontend OK$(COLOR_RESET)" || echo "  $(COLOR_YELLOW)✗ Frontend Failed$(COLOR_RESET)"
+
+.PHONY: test-docker
+test-docker: test-backend-docker test-frontend-docker ## Run all tests in Docker
+
+.PHONY: test-backend-docker
+test-backend-docker: ## Run backend tests in Docker
+	@echo "$(COLOR_GREEN)Running backend tests in Docker...$(COLOR_RESET)"
+	@docker run --rm -v $(PWD)/backend:/app -w /app golang:1.22-alpine go test -v ./...
+	@echo "$(COLOR_GREEN)✓ Backend tests completed$(COLOR_RESET)"
+
+.PHONY: test-frontend-docker
+test-frontend-docker: ## Run frontend tests in Docker
+	@echo "$(COLOR_GREEN)Running frontend tests in Docker...$(COLOR_RESET)"
+	@docker run --rm -v $(PWD)/frontend:/app -w /app node:18-alpine sh -c "npm ci --silent && npm test -- --watchAll=false"
+	@echo "$(COLOR_GREEN)✓ Frontend tests completed$(COLOR_RESET)"
+
+.PHONY: lint-docker
+lint-docker: lint-backend-docker lint-frontend-docker ## Run all linters in Docker
+
+.PHONY: lint-backend-docker
+lint-backend-docker: ## Run backend linter in Docker
+	@echo "$(COLOR_GREEN)Running backend linter in Docker...$(COLOR_RESET)"
+	@docker run --rm -v $(PWD)/backend:/app -w /app golangci/golangci-lint:v1.55.2-alpine golangci-lint run ./...
+	@echo "$(COLOR_GREEN)✓ Backend lint completed$(COLOR_RESET)"
+
+.PHONY: lint-frontend-docker
+lint-frontend-docker: ## Run frontend linter in Docker
+	@echo "$(COLOR_GREEN)Running frontend linter in Docker...$(COLOR_RESET)"
+	@docker run --rm -v $(PWD)/frontend:/app -w /app node:18-alpine sh -c "npm ci --silent && npm run lint"
+	@echo "$(COLOR_GREEN)✓ Frontend lint completed$(COLOR_RESET)"
+
+.PHONY: ci-docker
+ci-docker: lint-docker test-docker ## Run full CI suite in Docker (lint + test)
 
 .PHONY: version
 version: ## Show version information
