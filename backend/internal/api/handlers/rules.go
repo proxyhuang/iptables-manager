@@ -16,13 +16,19 @@ import (
 type RulesHandler struct {
 	iptablesService *service.IPTablesService
 	historyRepo     *repository.HistoryRepository
+	scheduler       *service.RuleScheduler
 }
 
 // NewRulesHandler creates a new rules handler
-func NewRulesHandler(iptablesService *service.IPTablesService, historyRepo *repository.HistoryRepository) *RulesHandler {
+func NewRulesHandler(
+	iptablesService *service.IPTablesService,
+	historyRepo *repository.HistoryRepository,
+	scheduler *service.RuleScheduler,
+) *RulesHandler {
 	return &RulesHandler{
 		iptablesService: iptablesService,
 		historyRepo:     historyRepo,
+		scheduler:       scheduler,
 	}
 }
 
@@ -93,8 +99,26 @@ func (h *RulesHandler) AddRule(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Failed to create history record: %v", createErr)
 	}
 
+	// Schedule auto-deletion if expires_in is set
+	if req.ExpiresIn > 0 && h.scheduler != nil {
+		ruleSpec := h.iptablesService.FormatRuleDetails(req)
+		if err := h.scheduler.ScheduleRuleDeletion(req.Table, req.Chain, ruleSpec, req.ExpiresIn); err != nil {
+			log.Printf("Failed to schedule rule expiry: %v", err)
+		} else {
+			log.Printf("Scheduled rule for auto-deletion in %d seconds", req.ExpiresIn)
+		}
+	}
+
 	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Rule added successfully"}); err != nil {
+	response := map[string]interface{}{
+		"status":  "success",
+		"message": "Rule added successfully",
+	}
+	if req.ExpiresIn > 0 {
+		response["expires_in"] = req.ExpiresIn
+		response["message"] = "Test rule added successfully (will auto-delete)"
+	}
+	if err := json.NewEncoder(w).Encode(response); err != nil {
 		log.Printf("Failed to encode response: %v", err)
 	}
 }

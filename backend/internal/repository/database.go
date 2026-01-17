@@ -49,6 +49,17 @@ func createTables() error {
 	CREATE INDEX IF NOT EXISTS idx_created_at ON history(created_at DESC);
 	CREATE INDEX IF NOT EXISTS idx_action ON history(action);
 	CREATE INDEX IF NOT EXISTS idx_success ON history(success);
+
+	CREATE TABLE IF NOT EXISTS temp_rules (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		table_name TEXT NOT NULL,
+		chain TEXT NOT NULL,
+		rule_spec TEXT NOT NULL,
+		expires_at DATETIME NOT NULL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_temp_rules_expires ON temp_rules(expires_at);
 	`
 
 	_, err := DB.Exec(createTableSQL)

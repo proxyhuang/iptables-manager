@@ -29,10 +29,16 @@ func main() {
 	iptablesService := service.NewIPTablesService()
 	statsService := service.NewStatsService(iptablesService)
 	historyRepo := repository.NewHistoryRepository(repository.DB)
+	tempRuleRepo := repository.NewTempRuleRepository(repository.DB)
 	authService := service.NewAuthService() // Initialize AuthService
 
+	// Initialize scheduler for temporary rules
+	scheduler := service.NewRuleScheduler(iptablesService, tempRuleRepo, historyRepo)
+	scheduler.Start()
+	defer scheduler.Stop()
+
 	// Initialize handlers
-	rulesHandler := handlers.NewRulesHandler(iptablesService, historyRepo)
+	rulesHandler := handlers.NewRulesHandler(iptablesService, historyRepo, scheduler)
 	statsHandler := handlers.NewStatsHandler(statsService)
 	historyHandler := handlers.NewHistoryHandler(historyRepo)
 	statsWSHandler := handlers.NewStatsWSHandler(statsService, authService)

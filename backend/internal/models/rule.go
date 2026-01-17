@@ -31,8 +31,9 @@ type RuleCreateRequest struct {
 	Sport       string `json:"sport"`
 	Dport       string `json:"dport"`
 	Target      string `json:"target" binding:"required"`
-	Position    int    `json:"position"` // insertion position
+	Position    int    `json:"position"`   // insertion position
 	Comment     string `json:"comment"`
+	ExpiresIn   int    `json:"expires_in"` // seconds until auto-delete (0 = permanent)
 }
 
 // RuleDeleteRequest represents a request to delete a rule
@@ -40,4 +41,14 @@ type RuleDeleteRequest struct {
 	Table      string `json:"table" binding:"required"`
 	Chain      string `json:"chain" binding:"required"`
 	LineNumber int    `json:"line_number" binding:"required"`
+}
+
+// TemporaryRule tracks rules that will auto-expire
+type TemporaryRule struct {
+	ID        int64     `json:"id"`
+	Table     string    `json:"table"`
+	Chain     string    `json:"chain"`
+	RuleSpec  string    `json:"rule_spec"` // rule specification for matching
+	ExpiresAt time.Time `json:"expires_at"`
+	CreatedAt time.Time `json:"created_at"`
 }

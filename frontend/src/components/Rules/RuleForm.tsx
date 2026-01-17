@@ -1,11 +1,11 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { Form, Input, Select, Button, Card, message, Row, Col, Divider, Typography, type GetProps } from 'antd';
-import { PlusOutlined, ThunderboltOutlined, GlobalOutlined, AimOutlined, TagOutlined } from '@ant-design/icons';
+import { PlusOutlined, ThunderboltOutlined, GlobalOutlined, AimOutlined, TagOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { AppDispatch } from '../../store/store';
 import { addRule } from '../../store/slices/rulesSlice';
-import { RuleCreateRequest } from '../../types/rule';
+import { RuleCreateRequest, EXPIRY_OPTIONS } from '../../types/rule';
 
 type DividerProps = GetProps<typeof Divider>;
 
@@ -311,6 +311,47 @@ export const RuleForm: React.FC = () => {
               style={inputStyle}
             />
           </Form.Item>
+
+          {/* Rule Lifetime Section */}
+          <Divider orientation={"left" as DividerProps['orientation']} style={{ color: 'var(--cyber-text-secondary)', borderColor: 'var(--cyber-border)' }}>
+            <ClockCircleOutlined style={{ marginRight: 8, color: 'var(--cyber-yellow, #f59e0b)' }} />
+            Rule Lifetime
+          </Divider>
+
+          <Row gutter={24}>
+            <Col xs={24} sm={12}>
+              <Form.Item
+                name="expires_in"
+                label={<span style={labelStyle}>Auto-Expire</span>}
+                initialValue={0}
+                tooltip="Test rules will be automatically deleted after the specified time"
+              >
+                <Select
+                  style={inputStyle}
+                  dropdownStyle={{
+                    background: 'var(--cyber-bg-card)',
+                    border: '1px solid var(--cyber-border)',
+                  }}
+                >
+                  {EXPIRY_OPTIONS.map((opt) => (
+                    <Option key={opt.value} value={opt.value}>
+                      <span style={{
+                        color: opt.value > 0 ? '#f59e0b' : 'var(--cyber-text-primary)',
+                        fontWeight: opt.value > 0 ? 500 : 400,
+                      }}>
+                        {opt.label}
+                      </span>
+                      {opt.value > 0 && (
+                        <span style={{ color: 'var(--cyber-text-muted)', marginLeft: 8, fontSize: 12 }}>
+                          (test mode)
+                        </span>
+                      )}
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
           {/* Submit Button */}
           <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>

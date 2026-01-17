@@ -192,15 +192,6 @@ build-and-up: build up ## Build and start services
 .PHONY: build-and-up-no-cache
 build-and-up-no-cache: build-no-cache up ## Build and start services (no cache)
 
-.PHONY: build-and-up-no-cache
-build-and-up-no-cache: build-no-cache up ## Build and start services (no cache)
-
-.PHONY: build-and-up-no-cache
-build-and-up-no-cache: build-no-cache up ## Build and start services (no cache)
-
-.PHONY: build-and-up-no-cache
-build-and-up-no-cache: build-no-cache up ## Build and start services (no cache)
-
 .PHONY: pull-and-up
 pull-and-up: pull up ## Pull and start services
 
@@ -317,5 +308,22 @@ setup: ## Initial setup
 	@chmod +x scripts/*.sh
 	@chmod +x docker-start.sh docker-stop.sh
 	@echo "$(COLOR_GREEN)✓ Setup completed$(COLOR_RESET)"
+
+# Development shells (all builds in Docker, no local Go/npm required)
+.PHONY: dev-shell-backend
+dev-shell-backend: ## Start backend dev shell in Docker
+	@echo "$(COLOR_GREEN)Starting backend dev shell...$(COLOR_RESET)"
+	@docker run --rm -it -v $(PWD)/backend:/app -w /app golang:1.22-alpine sh
+
+.PHONY: dev-shell-frontend
+dev-shell-frontend: ## Start frontend dev shell in Docker
+	@echo "$(COLOR_GREEN)Starting frontend dev shell...$(COLOR_RESET)"
+	@docker run --rm -it -v $(PWD)/frontend:/app -w /app node:18-alpine sh
+
+.PHONY: fmt-docker
+fmt-docker: ## Format backend code in Docker
+	@echo "$(COLOR_GREEN)Formatting backend code...$(COLOR_RESET)"
+	@docker run --rm -v $(PWD)/backend:/app -w /app golang:1.22-alpine go fmt ./...
+	@echo "$(COLOR_GREEN)✓ Format completed$(COLOR_RESET)"
 
 .DEFAULT_GOAL := help
