@@ -64,28 +64,7 @@ export const VersionInfo: React.FC = () => {
 
   return (
     <Tooltip title={renderTooltip()} placement="bottomRight" overlayStyle={{ maxWidth: '300px' }}>
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-        color: '#a855f7', // Using fixed purple to ensure visibility on dark header
-        cursor: 'pointer',
-        fontSize: '12px',
-        padding: '4px 8px',
-        textTransform: 'uppercase',
-        letterSpacing: '1px',
-        fontWeight: 500,
-        transition: 'all 0.3s ease',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.textShadow = '0 0 10px rgba(168, 85, 247, 0.5)';
-        e.currentTarget.style.color = '#d8b4fe';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.textShadow = 'none';
-        e.currentTarget.style.color = '#a855f7';
-      }}
-      >
+      <div className="version-indicator">
         <BuildOutlined />
         <span>V{frontendVersion.version}</span>
       </div>

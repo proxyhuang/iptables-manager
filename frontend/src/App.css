@@ -120,6 +120,23 @@
   box-shadow: 0 0 10px var(--cyber-green);
 }
 
+.version-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cyber-purple);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.version-indicator:hover {
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+  color: #d8b4fe;
+}
+
 /* Scanning Line Effect */
 @keyframes scanline {
   0% { transform: translateY(-100%); }
