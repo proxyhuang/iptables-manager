@@ -1,8 +1,10 @@
-# IPTables Web Manager
+# IPTables Manager
 
 A modern web-based interface for managing and monitoring iptables rules with real-time statistics and visualization.
 
-![UI](./UI.png)
+![UI-1](./UI-1.png)
+
+![UI-2](./UI-2.png)
 
 ## 🚀 Quick Start with Docker (Recommended)
 
@@ -154,7 +156,7 @@ npm start
 ## Project Structure
 
 ```
-iptables-web-manager/
+iptables-manager/
 ├── backend/                    # Go backend
 │   ├── cmd/server/            # Main application
 │   ├── internal/
