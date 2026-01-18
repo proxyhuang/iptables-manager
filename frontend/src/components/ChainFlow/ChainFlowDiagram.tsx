@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, useRef } from 'react';
 import { useSelector } from 'react-redux';
-import { Card, Typography, Select, Space, Tooltip, Tag, Switch } from 'antd';
+import { Card, Typography, Select, Space, Tooltip, Tag, Switch, Modal, Button, Slider } from 'antd';
 import {
   ArrowDownOutlined,
   ArrowUpOutlined,
@@ -8,10 +8,15 @@ import {
   ImportOutlined,
   ExportOutlined,
   BranchesOutlined,
+  ZoomInOutlined,
+  ZoomOutOutlined,
+  FullscreenOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { RootState } from '../../store/store';
 import { formatBytes } from '../../utils/formatters';
+import { Rule } from '../../types/rule';
 
 const { Text, Title } = Typography;
 
@@ -96,6 +101,9 @@ export const ChainFlowDiagram: React.FC = () => {
   const { rules } = useSelector((state: RootState) => state.rules);
   const [selectedTable, setSelectedTable] = useState<string>('all');
   const [showCustomOnly, setShowCustomOnly] = useState<boolean>(false);
+  const [zoom, setZoom] = useState<number>(100);
+  const [selectedChain, setSelectedChain] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Calculate chain statistics and relationships
   const { chainStats, chainRelations, customChains, allChains } = useMemo(() => {
@@ -168,6 +176,12 @@ export const ChainFlowDiagram: React.FC = () => {
     };
   }, [rules, selectedTable]);
 
+  // Get rules for selected chain
+  const selectedChainRules = useMemo(() => {
+    if (!selectedChain) return [];
+    return rules.filter((r) => r.chain === selectedChain || r.target === selectedChain);
+  }, [rules, selectedChain]);
+
   // Get unique tables
   const tables = useMemo(() => {
     const uniqueTables = Array.from(new Set(rules.map((r) => r.table)));
@@ -178,16 +192,22 @@ export const ChainFlowDiagram: React.FC = () => {
   const layoutPositions = useMemo(() => {
     const positions: Record<string, { x: number; y: number }> = {};
     const builtinChains = ['PREROUTING', 'INPUT', 'FORWARD', 'OUTPUT', 'POSTROUTING'];
-    const width = 900;
-    const height = Math.max(700, 200 + customChains.length * 80);
 
-    // Built-in chains layout (standard iptables flow)
+    // Calculate dimensions based on custom chains
+    const customCount = customChains.length;
+    const customRows = Math.ceil(customCount / 2);
+    const width = 800;
+    const baseHeight = 620;
+    const height = Math.max(baseHeight, 150 + customRows * 120);
+
+    // Built-in chains layout (standard iptables flow) - centered
+    const centerX = width / 2;
     const builtinLayout: Record<string, { x: number; y: number }> = {
-      PREROUTING: { x: width / 2, y: 80 },
-      INPUT: { x: width / 3, y: 220 },
-      FORWARD: { x: (2 * width) / 3, y: 220 },
-      OUTPUT: { x: width / 3, y: 400 },
-      POSTROUTING: { x: width / 2, y: 540 },
+      PREROUTING: { x: centerX, y: 80 },
+      INPUT: { x: centerX - 150, y: 220 },
+      FORWARD: { x: centerX + 150, y: 220 },
+      OUTPUT: { x: centerX - 150, y: 400 },
+      POSTROUTING: { x: centerX, y: 540 },
     };
 
     // Add builtin chains that have rules
@@ -197,7 +217,7 @@ export const ChainFlowDiagram: React.FC = () => {
       }
     });
 
-    // Layout custom chains on the right side
+    // Layout custom chains on the right side in a grid
     const customChainsWithStats = customChains.filter(
       (c) => chainStats[c] || chainRelations.some((r) => r.from === c || r.to === c)
     );
@@ -206,8 +226,8 @@ export const ChainFlowDiagram: React.FC = () => {
       const row = Math.floor(index / 2);
       const col = index % 2;
       positions[chain] = {
-        x: width - 180 + col * 160,
-        y: 100 + row * 100,
+        x: width - 200 + col * 180,
+        y: 100 + row * 120,
       };
     });
 
@@ -219,6 +239,7 @@ export const ChainFlowDiagram: React.FC = () => {
     const dx = x2 - x1;
     const dy = y2 - y1;
     const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist === 0) return `M ${x1} ${y1} L ${x2} ${y2}`;
 
     // Curve control point offset
     const curveOffset = Math.min(50, dist * 0.3);
@@ -235,6 +256,11 @@ export const ChainFlowDiagram: React.FC = () => {
     const cy = my + py * curveOffset;
 
     return `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+  }, []);
+
+  // Handle chain click
+  const handleChainClick = useCallback((chain: string) => {
+    setSelectedChain(chain);
   }, []);
 
   // Render a chain node
@@ -254,116 +280,121 @@ export const ChainFlowDiagram: React.FC = () => {
       description: 'Custom chain',
     };
 
-    // Find incoming and outgoing relations
-    const incoming = chainRelations.filter((r) => r.to === chain);
-    const outgoing = chainRelations.filter((r) => r.from === chain);
-
     return (
       <motion.g
         key={chain}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.3, delay: index * 0.05 }}
+        onClick={() => handleChainClick(chain)}
+        style={{ cursor: 'pointer' }}
       >
-        <Tooltip
-          title={
-            <div>
-              <div><strong>{chain}</strong></div>
-              <div>{config.description}</div>
-              <div style={{ marginTop: 8 }}>
-                {incoming.length > 0 && (
-                  <div>← From: {incoming.map((r) => r.from).join(', ')}</div>
-                )}
-                {outgoing.length > 0 && (
-                  <div>→ To: {outgoing.map((r) => r.to).join(', ')}</div>
-                )}
-              </div>
-            </div>
-          }
-        >
-          <g transform={`translate(${x}, ${y})`} style={{ cursor: 'pointer' }}>
-            {/* Node background */}
+        <g transform={`translate(${x}, ${y})`}>
+          {/* Node background */}
+          <rect
+            x="-70"
+            y="-45"
+            width="140"
+            height="90"
+            rx="12"
+            fill="var(--cyber-bg-card)"
+            stroke={config.color}
+            strokeWidth={2}
+            strokeDasharray={isBuiltin ? undefined : '4'}
+            style={{
+              filter: `drop-shadow(0 0 8px ${config.color}40)`,
+            }}
+          />
+
+          {/* Hover effect */}
+          <rect
+            x="-70"
+            y="-45"
+            width="140"
+            height="90"
+            rx="12"
+            fill="transparent"
+            stroke="transparent"
+            className="chain-node-hover"
+          />
+
+          {/* Chain type indicator */}
+          {!isBuiltin && (
             <rect
               x="-70"
               y="-45"
-              width="140"
-              height="90"
-              rx="12"
-              fill="var(--cyber-bg-card)"
-              stroke={config.color}
-              strokeWidth={isBuiltin ? 2 : 2}
-              strokeDasharray={isBuiltin ? undefined : '4'}
-              style={{
-                filter: `drop-shadow(0 0 8px ${config.color}40)`,
-              }}
-            />
-
-            {/* Chain type indicator */}
-            {!isBuiltin && (
-              <rect
-                x="-70"
-                y="-45"
-                width="50"
-                height="18"
-                rx="6"
-                fill={config.color}
-                opacity="0.9"
-              />
-            )}
-            {!isBuiltin && (
-              <text x="-45" y="-32" fill="#fff" fontSize="9" fontWeight="500">
-                CUSTOM
-              </text>
-            )}
-
-            {/* Chain name */}
-            <text
-              textAnchor="middle"
-              y={isBuiltin ? -15 : -10}
+              width="50"
+              height="18"
+              rx="6"
               fill={config.color}
-              fontSize="13"
-              fontWeight="600"
-            >
-              {chain.length > 14 ? chain.substring(0, 12) + '...' : chain}
+              opacity="0.9"
+            />
+          )}
+          {!isBuiltin && (
+            <text x="-45" y="-32" fill="#fff" fontSize="9" fontWeight="500">
+              CUSTOM
             </text>
+          )}
 
-            {/* Rule count */}
-            <text
-              textAnchor="middle"
-              y="8"
-              fill="var(--cyber-text-secondary)"
-              fontSize="11"
-            >
-              {stats.ruleCount} rules
-            </text>
+          {/* Chain name */}
+          <text
+            textAnchor="middle"
+            y={isBuiltin ? -15 : -10}
+            fill={config.color}
+            fontSize="13"
+            fontWeight="600"
+          >
+            {chain.length > 14 ? chain.substring(0, 12) + '...' : chain}
+          </text>
 
-            {/* Packet stats */}
-            <text
-              textAnchor="middle"
-              y="24"
-              fill="var(--cyber-text-muted)"
-              fontSize="10"
-            >
-              {stats.packets.toLocaleString()} pkts
-            </text>
+          {/* Rule count */}
+          <text
+            textAnchor="middle"
+            y="8"
+            fill="var(--cyber-text-secondary)"
+            fontSize="11"
+          >
+            {stats.ruleCount} rules
+          </text>
 
-            {/* Table indicators */}
-            <g transform="translate(0, 38)">
-              {stats.tables.map((table, i) => (
+          {/* Packet stats */}
+          <text
+            textAnchor="middle"
+            y="24"
+            fill="var(--cyber-text-muted)"
+            fontSize="10"
+          >
+            {stats.packets.toLocaleString()} pkts
+          </text>
+
+          {/* Table indicators */}
+          <g transform="translate(0, 38)">
+            {stats.tables.map((table, i) => (
+              <Tooltip key={table} title={table}>
                 <circle
-                  key={table}
                   cx={(i - (stats.tables.length - 1) / 2) * 14}
                   cy="0"
                   r="5"
                   fill={tableColors[table] || '#64748b'}
                 />
-              ))}
-            </g>
+              </Tooltip>
+            ))}
           </g>
-        </Tooltip>
+
+          {/* Click hint */}
+          <text
+            textAnchor="middle"
+            y="55"
+            fill="var(--cyber-text-muted)"
+            fontSize="8"
+            opacity="0.6"
+          >
+            Click for details
+          </text>
+        </g>
       </motion.g>
     );
-  }, [chainStats, chainRelations]);
+  }, [chainStats, handleChainClick]);
 
   // Filter chains to display
   const displayChains = useMemo(() => {
@@ -372,6 +403,52 @@ export const ChainFlowDiagram: React.FC = () => {
     }
     return allChains;
   }, [allChains, showCustomOnly]);
+
+  // Get chain detail info
+  const getChainDetail = useCallback((chain: string) => {
+    const stats = chainStats[chain];
+    const incoming = chainRelations.filter((r) => r.to === chain);
+    const outgoing = chainRelations.filter((r) => r.from === chain);
+    const isBuiltin = !!builtinChainConfig[chain];
+    const config = builtinChainConfig[chain];
+    const color = config?.color || getChainColor(chain, 0);
+
+    return { stats, incoming, outgoing, isBuiltin, config, color };
+  }, [chainStats, chainRelations]);
+
+  // Render rule row for modal
+  const renderRuleRow = (rule: Rule, index: number) => (
+    <div
+      key={`${rule.table}-${rule.chain}-${rule.line_number}-${index}`}
+      style={{
+        padding: '8px 12px',
+        background: index % 2 === 0 ? 'var(--cyber-bg-secondary)' : 'transparent',
+        borderRadius: 4,
+        fontSize: 12,
+        display: 'grid',
+        gridTemplateColumns: '40px 60px 80px 100px 100px 80px',
+        gap: 8,
+        alignItems: 'center',
+      }}
+    >
+      <span style={{ color: 'var(--cyber-text-muted)' }}>#{rule.line_number}</span>
+      <Tag style={{ margin: 0, fontSize: 10 }} color={tableColors[rule.table] ? undefined : 'default'}>
+        {rule.table}
+      </Tag>
+      <span style={{ color: rule.target === 'ACCEPT' ? '#10b981' : rule.target === 'DROP' ? '#ef4444' : 'var(--cyber-cyan)' }}>
+        {rule.target}
+      </span>
+      <span style={{ color: 'var(--cyber-text-secondary)', fontFamily: 'monospace' }}>
+        {rule.source === '0.0.0.0/0' ? 'any' : rule.source}
+      </span>
+      <span style={{ color: 'var(--cyber-text-secondary)', fontFamily: 'monospace' }}>
+        {rule.destination === '0.0.0.0/0' ? 'any' : rule.destination}
+      </span>
+      <span style={{ color: 'var(--cyber-text-muted)' }}>
+        {rule.protocol || 'all'}
+      </span>
+    </div>
+  );
 
   return (
     <motion.div
@@ -395,12 +472,12 @@ export const ChainFlowDiagram: React.FC = () => {
                 IPTables Chain Relationships
               </Title>
               <Text type="secondary">
-                Visual representation of chain relationships and packet flow
+                Click on any chain to view details
               </Text>
             </div>
             <Space wrap>
               <Space>
-                <Text type="secondary">Show Custom Only:</Text>
+                <Text type="secondary">Custom Only:</Text>
                 <Switch checked={showCustomOnly} onChange={setShowCustomOnly} size="small" />
               </Space>
               <Space>
@@ -408,7 +485,7 @@ export const ChainFlowDiagram: React.FC = () => {
                 <Select
                   value={selectedTable}
                   onChange={setSelectedTable}
-                  style={{ width: 140 }}
+                  style={{ width: 120 }}
                   options={tables.map((t) => ({
                     label: t === 'all' ? 'All Tables' : t.toUpperCase(),
                     value: t,
@@ -421,12 +498,13 @@ export const ChainFlowDiagram: React.FC = () => {
           {/* Legend */}
           <div style={{
             display: 'flex',
-            gap: '16px',
+            gap: '12px',
             flexWrap: 'wrap',
-            padding: '12px',
+            padding: '10px 12px',
             background: 'var(--cyber-bg-secondary)',
             borderRadius: '8px',
             alignItems: 'center',
+            fontSize: 12,
           }}>
             <Text type="secondary">Tables:</Text>
             {Object.entries(tableColors).map(([table, color]) => (
@@ -436,17 +514,17 @@ export const ChainFlowDiagram: React.FC = () => {
                   background: `${color}20`,
                   border: `1px solid ${color}40`,
                   color: color,
+                  fontSize: 11,
                 }}
               >
                 {table}
               </Tag>
             ))}
-            <span style={{ margin: '0 8px', color: 'var(--cyber-border)' }}>|</span>
-            <Text type="secondary">Chains:</Text>
-            <Tag style={{ border: '2px solid var(--cyber-cyan)', background: 'transparent', color: 'var(--cyber-text-secondary)' }}>
+            <span style={{ margin: '0 4px', color: 'var(--cyber-border)' }}>|</span>
+            <Tag style={{ border: '2px solid var(--cyber-cyan)', background: 'transparent', color: 'var(--cyber-text-secondary)', fontSize: 11 }}>
               Built-in
             </Tag>
-            <Tag style={{ border: '2px dashed var(--cyber-purple)', background: 'transparent', color: 'var(--cyber-text-secondary)' }}>
+            <Tag style={{ border: '2px dashed var(--cyber-purple)', background: 'transparent', color: 'var(--cyber-text-secondary)', fontSize: 11 }}>
               Custom
             </Tag>
           </div>
@@ -456,155 +534,204 @@ export const ChainFlowDiagram: React.FC = () => {
             display: 'flex',
             gap: '24px',
             flexWrap: 'wrap',
-            padding: '12px 16px',
+            padding: '10px 16px',
             background: 'var(--cyber-bg-secondary)',
             borderRadius: '8px',
           }}>
             <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>Total Chains</Text>
-              <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--cyber-cyan)' }}>
+              <Text type="secondary" style={{ fontSize: 11 }}>Total Chains</Text>
+              <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--cyber-cyan)' }}>
                 {allChains.length}
               </div>
             </div>
             <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>Custom Chains</Text>
-              <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--cyber-purple)' }}>
+              <Text type="secondary" style={{ fontSize: 11 }}>Custom Chains</Text>
+              <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--cyber-purple)' }}>
                 {customChains.length}
               </div>
             </div>
             <div>
-              <Text type="secondary" style={{ fontSize: 12 }}>Chain Relations</Text>
-              <div style={{ fontSize: 20, fontWeight: 600, color: 'var(--cyber-orange)' }}>
+              <Text type="secondary" style={{ fontSize: 11 }}>Chain Relations</Text>
+              <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--cyber-orange)' }}>
                 {chainRelations.length}
               </div>
             </div>
           </div>
 
-          {/* SVG Diagram */}
-          <div style={{ overflow: 'auto', background: 'var(--cyber-bg-secondary)', borderRadius: 12, padding: 16 }}>
-            <svg
-              width={layoutPositions.width}
-              height={layoutPositions.height}
-              viewBox={`0 0 ${layoutPositions.width} ${layoutPositions.height}`}
-              style={{ margin: '0 auto', display: 'block', minWidth: 800 }}
+          {/* Zoom Controls */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '8px 16px',
+            background: 'var(--cyber-bg-secondary)',
+            borderRadius: '8px',
+          }}>
+            <ZoomOutOutlined style={{ color: 'var(--cyber-text-muted)' }} />
+            <Slider
+              min={50}
+              max={150}
+              value={zoom}
+              onChange={setZoom}
+              style={{ flex: 1, maxWidth: 200 }}
+              tooltip={{ formatter: (v) => `${v}%` }}
+            />
+            <ZoomInOutlined style={{ color: 'var(--cyber-text-muted)' }} />
+            <Text type="secondary" style={{ fontSize: 12, minWidth: 40 }}>{zoom}%</Text>
+            <Button
+              size="small"
+              icon={<FullscreenOutlined />}
+              onClick={() => setZoom(100)}
+              style={{ marginLeft: 8 }}
             >
-              {/* Definitions */}
-              <defs>
-                {/* Arrow markers with different colors */}
-                <marker
-                  id="arrowhead-default"
-                  markerWidth="8"
-                  markerHeight="6"
-                  refX="8"
-                  refY="3"
-                  orient="auto"
-                >
-                  <polygon points="0 0, 8 3, 0 6" fill="var(--cyber-cyan)" />
-                </marker>
-                <marker
-                  id="arrowhead-custom"
-                  markerWidth="8"
-                  markerHeight="6"
-                  refX="8"
-                  refY="3"
-                  orient="auto"
-                >
-                  <polygon points="0 0, 8 3, 0 6" fill="var(--cyber-purple)" />
-                </marker>
+              Reset
+            </Button>
+          </div>
 
-                {/* Background grid */}
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path
-                    d="M 40 0 L 0 0 0 40"
-                    fill="none"
-                    stroke="var(--cyber-border)"
-                    strokeWidth="0.5"
-                    opacity="0.3"
-                  />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" rx="8" />
+          {/* SVG Diagram */}
+          <div
+            ref={containerRef}
+            style={{
+              overflow: 'auto',
+              background: 'var(--cyber-bg-secondary)',
+              borderRadius: 12,
+              padding: 16,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+            }}
+          >
+            <div style={{
+              transform: `scale(${zoom / 100})`,
+              transformOrigin: 'top center',
+              transition: 'transform 0.2s ease',
+            }}>
+              <svg
+                width={layoutPositions.width}
+                height={layoutPositions.height}
+                viewBox={`0 0 ${layoutPositions.width} ${layoutPositions.height}`}
+                style={{ display: 'block' }}
+              >
+                {/* Definitions */}
+                <defs>
+                  {/* Arrow markers with different colors */}
+                  <marker
+                    id="arrowhead-default"
+                    markerWidth="8"
+                    markerHeight="6"
+                    refX="8"
+                    refY="3"
+                    orient="auto"
+                  >
+                    <polygon points="0 0, 8 3, 0 6" fill="var(--cyber-cyan)" />
+                  </marker>
+                  <marker
+                    id="arrowhead-custom"
+                    markerWidth="8"
+                    markerHeight="6"
+                    refX="8"
+                    refY="3"
+                    orient="auto"
+                  >
+                    <polygon points="0 0, 8 3, 0 6" fill="var(--cyber-purple)" />
+                  </marker>
 
-              {/* Draw relation arrows */}
-              {chainRelations.map((rel, idx) => {
-                const fromPos = layoutPositions.positions[rel.from];
-                const toPos = layoutPositions.positions[rel.to];
-
-                if (!fromPos || !toPos) return null;
-
-                const isToCustom = !builtinChainConfig[rel.to];
-                const markerId = isToCustom ? 'arrowhead-custom' : 'arrowhead-default';
-
-                // Adjust start/end points to edge of nodes
-                const dx = toPos.x - fromPos.x;
-                const dy = toPos.y - fromPos.y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                const offsetX = (dx / dist) * 70;
-                const offsetY = (dy / dist) * 45;
-
-                const x1 = fromPos.x + offsetX;
-                const y1 = fromPos.y + offsetY;
-                const x2 = toPos.x - offsetX;
-                const y2 = toPos.y - offsetY;
-
-                return (
-                  <g key={`rel-${idx}`}>
-                    <motion.path
-                      d={getArrowPath(x1, y1, x2, y2)}
+                  {/* Background grid */}
+                  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path
+                      d="M 40 0 L 0 0 0 40"
                       fill="none"
-                      stroke={isToCustom ? 'var(--cyber-purple)' : 'var(--cyber-cyan)'}
-                      strokeWidth="2"
-                      strokeOpacity="0.6"
-                      markerEnd={`url(#${markerId})`}
-                      initial={{ pathLength: 0 }}
-                      animate={{ pathLength: 1 }}
-                      transition={{ duration: 0.5, delay: idx * 0.1 }}
+                      stroke="var(--cyber-border)"
+                      strokeWidth="0.5"
+                      opacity="0.3"
                     />
-                    {/* Relation count badge */}
-                    <g transform={`translate(${(x1 + x2) / 2}, ${(y1 + y2) / 2 - 10})`}>
-                      <rect
-                        x="-12"
-                        y="-8"
-                        width="24"
-                        height="16"
-                        rx="8"
-                        fill={isToCustom ? 'var(--cyber-purple)' : 'var(--cyber-cyan)'}
-                        opacity="0.9"
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" rx="8" />
+
+                {/* Draw relation arrows */}
+                {chainRelations.map((rel, idx) => {
+                  const fromPos = layoutPositions.positions[rel.from];
+                  const toPos = layoutPositions.positions[rel.to];
+
+                  if (!fromPos || !toPos) return null;
+
+                  const isToCustom = !builtinChainConfig[rel.to];
+                  const markerId = isToCustom ? 'arrowhead-custom' : 'arrowhead-default';
+
+                  // Adjust start/end points to edge of nodes
+                  const dx = toPos.x - fromPos.x;
+                  const dy = toPos.y - fromPos.y;
+                  const dist = Math.sqrt(dx * dx + dy * dy);
+                  if (dist === 0) return null;
+
+                  const offsetX = (dx / dist) * 70;
+                  const offsetY = (dy / dist) * 45;
+
+                  const x1 = fromPos.x + offsetX;
+                  const y1 = fromPos.y + offsetY;
+                  const x2 = toPos.x - offsetX;
+                  const y2 = toPos.y - offsetY;
+
+                  return (
+                    <g key={`rel-${idx}`}>
+                      <motion.path
+                        d={getArrowPath(x1, y1, x2, y2)}
+                        fill="none"
+                        stroke={isToCustom ? 'var(--cyber-purple)' : 'var(--cyber-cyan)'}
+                        strokeWidth="2"
+                        strokeOpacity="0.6"
+                        markerEnd={`url(#${markerId})`}
+                        initial={{ pathLength: 0 }}
+                        animate={{ pathLength: 1 }}
+                        transition={{ duration: 0.5, delay: idx * 0.1 }}
                       />
-                      <text
-                        textAnchor="middle"
-                        y="4"
-                        fill="#fff"
-                        fontSize="9"
-                        fontWeight="600"
-                      >
-                        {rel.count}
-                      </text>
+                      {/* Relation count badge */}
+                      <g transform={`translate(${(x1 + x2) / 2}, ${(y1 + y2) / 2 - 10})`}>
+                        <rect
+                          x="-12"
+                          y="-8"
+                          width="24"
+                          height="16"
+                          rx="8"
+                          fill={isToCustom ? 'var(--cyber-purple)' : 'var(--cyber-cyan)'}
+                          opacity="0.9"
+                        />
+                        <text
+                          textAnchor="middle"
+                          y="4"
+                          fill="#fff"
+                          fontSize="9"
+                          fontWeight="600"
+                        >
+                          {rel.count}
+                        </text>
+                      </g>
                     </g>
-                  </g>
-                );
-              })}
+                  );
+                })}
 
-              {/* Draw chain nodes */}
-              {displayChains.map((chain, idx) => {
-                const pos = layoutPositions.positions[chain];
-                if (!pos) return null;
-                return renderChainNode(chain, pos.x, pos.y, idx);
-              })}
+                {/* Draw chain nodes */}
+                {displayChains.map((chain, idx) => {
+                  const pos = layoutPositions.positions[chain];
+                  if (!pos) return null;
+                  return renderChainNode(chain, pos.x, pos.y, idx);
+                })}
 
-              {/* No data message */}
-              {displayChains.length === 0 && (
-                <text
-                  x={layoutPositions.width / 2}
-                  y={layoutPositions.height / 2}
-                  textAnchor="middle"
-                  fill="var(--cyber-text-muted)"
-                  fontSize="14"
-                >
-                  No chains to display
-                </text>
-              )}
-            </svg>
+                {/* No data message */}
+                {displayChains.length === 0 && (
+                  <text
+                    x={layoutPositions.width / 2}
+                    y={layoutPositions.height / 2}
+                    textAnchor="middle"
+                    fill="var(--cyber-text-muted)"
+                    fontSize="14"
+                  >
+                    No chains to display
+                  </text>
+                )}
+              </svg>
+            </div>
           </div>
 
           {/* Chain details grid */}
@@ -625,6 +752,7 @@ export const ChainFlowDiagram: React.FC = () => {
                 return (
                   <div
                     key={chain}
+                    onClick={() => handleChainClick(chain)}
                     style={{
                       padding: '12px',
                       background: 'var(--cyber-bg-card)',
@@ -634,6 +762,16 @@ export const ChainFlowDiagram: React.FC = () => {
                       borderLeftWidth: 3,
                       borderLeftStyle: 'solid',
                       borderLeftColor: color,
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s, box-shadow 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = `0 4px 12px ${color}30`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -671,6 +809,220 @@ export const ChainFlowDiagram: React.FC = () => {
           </div>
         </Space>
       </Card>
+
+      {/* Chain Detail Modal */}
+      <Modal
+        open={!!selectedChain}
+        onCancel={() => setSelectedChain(null)}
+        footer={null}
+        width={700}
+        title={null}
+        closeIcon={<CloseOutlined style={{ color: 'var(--cyber-text-secondary)' }} />}
+        className="chain-detail-modal"
+      >
+        {selectedChain && (() => {
+          const { stats, incoming, outgoing, isBuiltin, config, color } = getChainDetail(selectedChain);
+          return (
+            <div>
+              {/* Modal Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                marginBottom: 20,
+                paddingBottom: 16,
+                borderBottom: '1px solid var(--cyber-border)',
+              }}>
+                <div style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  background: `${color}20`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 24,
+                  color: color,
+                }}>
+                  {config?.icon || <BranchesOutlined />}
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Title level={4} style={{ margin: 0, color: color }}>
+                      {selectedChain}
+                    </Title>
+                    {!isBuiltin && (
+                      <Tag style={{ background: `${color}30`, border: 'none', color, fontSize: 10 }}>
+                        CUSTOM
+                      </Tag>
+                    )}
+                  </div>
+                  <Text type="secondary">
+                    {config?.description || 'Custom chain'}
+                  </Text>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: 16,
+                marginBottom: 20,
+              }}>
+                <div style={{
+                  padding: 16,
+                  background: 'var(--cyber-bg-secondary)',
+                  borderRadius: 8,
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--cyber-cyan)' }}>
+                    {stats?.ruleCount || 0}
+                  </div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Rules</Text>
+                </div>
+                <div style={{
+                  padding: 16,
+                  background: 'var(--cyber-bg-secondary)',
+                  borderRadius: 8,
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--cyber-green)' }}>
+                    {(stats?.packets || 0).toLocaleString()}
+                  </div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Packets</Text>
+                </div>
+                <div style={{
+                  padding: 16,
+                  background: 'var(--cyber-bg-secondary)',
+                  borderRadius: 8,
+                  textAlign: 'center',
+                }}>
+                  <div style={{ fontSize: 24, fontWeight: 600, color: 'var(--cyber-purple)' }}>
+                    {formatBytes(stats?.bytes || 0)}
+                  </div>
+                  <Text type="secondary" style={{ fontSize: 12 }}>Traffic</Text>
+                </div>
+              </div>
+
+              {/* Relations */}
+              {(incoming.length > 0 || outgoing.length > 0) && (
+                <div style={{
+                  marginBottom: 20,
+                  padding: 16,
+                  background: 'var(--cyber-bg-secondary)',
+                  borderRadius: 8,
+                }}>
+                  <Text strong style={{ color: 'var(--cyber-text-primary)', display: 'block', marginBottom: 12 }}>
+                    Chain Relationships
+                  </Text>
+                  {incoming.length > 0 && (
+                    <div style={{ marginBottom: 8 }}>
+                      <Text type="secondary" style={{ fontSize: 12 }}>Called from:</Text>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                        {incoming.map((r) => (
+                          <Tag
+                            key={r.from}
+                            style={{
+                              background: 'var(--cyber-bg-card)',
+                              border: '1px solid var(--cyber-border)',
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => setSelectedChain(r.from)}
+                          >
+                            ← {r.from} ({r.count} rules)
+                          </Tag>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {outgoing.length > 0 && (
+                    <div>
+                      <Text type="secondary" style={{ fontSize: 12 }}>Jumps to:</Text>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                        {outgoing.map((r) => (
+                          <Tag
+                            key={r.to}
+                            style={{
+                              background: 'var(--cyber-bg-card)',
+                              border: '1px solid var(--cyber-border)',
+                              cursor: 'pointer',
+                            }}
+                            onClick={() => setSelectedChain(r.to)}
+                          >
+                            → {r.to} ({r.count} rules)
+                          </Tag>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Rules in this chain */}
+              <div>
+                <Text strong style={{ color: 'var(--cyber-text-primary)', display: 'block', marginBottom: 12 }}>
+                  Rules ({selectedChainRules.length})
+                </Text>
+                <div style={{
+                  maxHeight: 300,
+                  overflowY: 'auto',
+                  borderRadius: 8,
+                  border: '1px solid var(--cyber-border)',
+                }}>
+                  {/* Header */}
+                  <div style={{
+                    padding: '8px 12px',
+                    background: 'var(--cyber-bg-hover)',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: 'var(--cyber-text-secondary)',
+                    display: 'grid',
+                    gridTemplateColumns: '40px 60px 80px 100px 100px 80px',
+                    gap: 8,
+                    position: 'sticky',
+                    top: 0,
+                  }}>
+                    <span>#</span>
+                    <span>Table</span>
+                    <span>Target</span>
+                    <span>Source</span>
+                    <span>Dest</span>
+                    <span>Proto</span>
+                  </div>
+                  {selectedChainRules.length > 0 ? (
+                    selectedChainRules.map((rule, idx) => renderRuleRow(rule, idx))
+                  ) : (
+                    <div style={{ padding: 24, textAlign: 'center', color: 'var(--cyber-text-muted)' }}>
+                      No rules in this chain
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
+
+      <style>{`
+        .chain-node-hover:hover {
+          stroke: var(--cyber-cyan) !important;
+          stroke-width: 3px;
+        }
+        .chain-detail-modal .ant-modal-content {
+          background: var(--cyber-bg-card) !important;
+          border: 1px solid var(--cyber-border) !important;
+          border-radius: 16px !important;
+          padding: 24px !important;
+        }
+        .chain-detail-modal .ant-modal-header {
+          background: transparent !important;
+          border-bottom: none !important;
+        }
+        .chain-detail-modal .ant-modal-body {
+          padding: 0 !important;
+        }
+      `}</style>
     </motion.div>
   );
 };
