@@ -16,12 +16,15 @@ import {
   QuestionOutlined,
   ExclamationCircleOutlined,
   SettingOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import { motion } from 'framer-motion';
 import { RootState, AppDispatch } from '../../store/store';
 import { fetchRules, deleteRule, setSelectedTable, setSelectedChain } from '../../store/slices/rulesSlice';
 import { Rule } from '../../types/rule';
 import { formatBytes } from '../../utils/formatters';
+
+import { apiClient } from '../../services/api';
 
 // Chain direction configuration
 const chainDirections: Record<string, {
@@ -151,6 +154,29 @@ export const RuleList: React.FC = () => {
     // Ensure at least one column is visible
     if (checkedValues.length > 0) {
       setVisibleColumns(checkedValues);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      message.loading('Generating CSV...', 1);
+      const response = await apiClient.get('/rules/export/csv', {
+        responseType: 'blob',
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'iptables_rules.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      message.success('Export successful');
+    } catch (error) {
+      console.error('Export failed:', error);
+      message.error('Failed to export CSV');
     }
   };
 
@@ -683,6 +709,18 @@ export const RuleList: React.FC = () => {
             }}
           >
             Refresh
+          </Button>
+
+          <Button
+            icon={<DownloadOutlined />}
+            onClick={handleExportCSV}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--cyber-border)',
+              color: 'var(--cyber-text-primary)',
+            }}
+          >
+            Export CSV
           </Button>
 
           {selectedRowKeys.length > 0 && (

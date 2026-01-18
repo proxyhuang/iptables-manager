@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -179,5 +181,47 @@ func (h *RulesHandler) SearchRules(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(rules); err != nil {
 		log.Printf("Failed to encode rules response: %v", err)
+	}
+}
+
+// ExportRules handles GET /api/v1/rules/export/csv
+func (h *RulesHandler) ExportRules(w http.ResponseWriter, r *http.Request) {
+	rules, err := h.iptablesService.GetAllRules()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"iptables_rules.csv\"")
+
+	writer := csv.NewWriter(w)
+	defer writer.Flush()
+
+	// Write header
+	header := []string{"Table", "Chain", "Protocol", "Source", "Destination", "Target", "Options", "Packets", "Bytes"}
+	if err := writer.Write(header); err != nil {
+		log.Printf("Failed to write CSV header: %v", err)
+		http.Error(w, "Failed to generate CSV", http.StatusInternalServerError)
+		return
+	}
+
+	// Write data
+	for _, rule := range rules {
+		row := []string{
+			rule.Table,
+			rule.Chain,
+			rule.Protocol,
+			rule.Source,
+			rule.Destination,
+			rule.Target,
+			rule.Options,
+			fmt.Sprintf("%d", rule.Packets),
+			fmt.Sprintf("%d", rule.Bytes),
+		}
+		if err := writer.Write(row); err != nil {
+			log.Printf("Failed to write CSV row: %v", err)
+			return
+		}
 	}
 }

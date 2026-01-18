@@ -16,6 +16,7 @@ func NewRouter(
 	statsWSHandler *handlers.StatsWSHandler,
 	rulesWSHandler *handlers.RulesWSHandler,
 	authHandler *handlers.AuthHandler,
+	systemHandler *handlers.SystemHandler,
 	authService *service.AuthService,
 ) *mux.Router {
 	r := mux.NewRouter()
@@ -28,16 +29,20 @@ func NewRouter(
 	authRouter := r.PathPrefix("/api/v1/auth").Subrouter()
 	authRouter.HandleFunc("/login", authHandler.Login).Methods("POST")
 
+	// System endpoints (public)
+	r.HandleFunc("/api/v1/version", systemHandler.GetVersion).Methods("GET")
+
 	// Create a subrouter for all other API endpoints and apply auth middleware
 	api := r.PathPrefix("/api/v1").Subrouter()
 	api.Use(middleware.AuthMiddleware(authService))
 
 	// Rules endpoints
 	api.HandleFunc("/rules", rulesHandler.GetRules).Methods("GET")
+	api.HandleFunc("/rules/search", rulesHandler.SearchRules).Methods("GET")
+	api.HandleFunc("/rules/export/csv", rulesHandler.ExportRules).Methods("GET")
 	api.HandleFunc("/rules/{table}", rulesHandler.GetRulesByTable).Methods("GET")
 	api.HandleFunc("/rules", rulesHandler.AddRule).Methods("POST")
 	api.HandleFunc("/rules", rulesHandler.DeleteRule).Methods("DELETE")
-	api.HandleFunc("/rules/search", rulesHandler.SearchRules).Methods("GET")
 
 	// Statistics endpoints
 	api.HandleFunc("/stats/traffic", statsHandler.GetTrafficStats).Methods("GET")

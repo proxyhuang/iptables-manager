@@ -18,6 +18,10 @@ VERSION ?= latest
 REGISTRY ?= docker.io
 NAMESPACE ?= proxyhuang
 
+# Build information
+GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+
 # Image names
 BACKEND_IMAGE := $(REGISTRY)/$(NAMESPACE)/$(PROJECT_NAME)-backend
 FRONTEND_IMAGE := $(REGISTRY)/$(NAMESPACE)/$(PROJECT_NAME)-frontend
@@ -48,7 +52,7 @@ help: ## Show this help message
 .PHONY: build
 build: ## Build Docker images (with BuildKit cache)
 	@echo "$(COLOR_GREEN)Building Docker images with BuildKit...$(COLOR_RESET)"
-	@DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 REGISTRY=$(REGISTRY) NAMESPACE=$(NAMESPACE) VERSION=$(VERSION) docker compose build --parallel
+	@DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 REGISTRY=$(REGISTRY) NAMESPACE=$(NAMESPACE) VERSION=$(VERSION) GIT_COMMIT=$(GIT_COMMIT) BUILD_TIME=$(BUILD_TIME) docker compose build --parallel --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(GIT_COMMIT) --build-arg BUILD_TIME=$(BUILD_TIME)
 	@echo "$(COLOR_GREEN)✓ Build completed$(COLOR_RESET)"
 
 .PHONY: build-backend
@@ -66,7 +70,7 @@ build-frontend: ## Build frontend image only
 .PHONY: build-no-cache
 build-no-cache: ## Build images without cache (still uses BuildKit)
 	@echo "$(COLOR_GREEN)Building Docker images (no cache)...$(COLOR_RESET)"
-	@DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 REGISTRY=$(REGISTRY) NAMESPACE=$(NAMESPACE) VERSION=$(VERSION) docker compose build --no-cache --parallel
+	@DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 REGISTRY=$(REGISTRY) NAMESPACE=$(NAMESPACE) VERSION=$(VERSION) GIT_COMMIT=$(GIT_COMMIT) BUILD_TIME=$(BUILD_TIME) docker compose build --no-cache --parallel --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(GIT_COMMIT) --build-arg BUILD_TIME=$(BUILD_TIME)
 	@echo "$(COLOR_GREEN)✓ Build completed$(COLOR_RESET)"
 
 .PHONY: push

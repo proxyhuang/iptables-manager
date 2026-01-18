@@ -15,6 +15,7 @@ import { RuleForm } from './components/Rules/RuleForm';
 import { LiveStats } from './components/Statistics/LiveStats';
 import { ChainFlowDiagram } from './components/ChainFlow/ChainFlowDiagram';
 import { Login } from './components/Auth/Login';
+import { VersionInfo } from './components/VersionInfo';
 import { logout } from './store/slices/authSlice';
 import { useTheme } from './context/ThemeContext';
 import type { RootState, AppDispatch } from './store/store';
@@ -74,7 +75,12 @@ const App: React.FC = () => {
           height: '70px',
           lineHeight: '70px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <a 
+            href="https://github.com/proxyhuang/iptables-manager.git" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: '16px', textDecoration: 'none' }}
+          >
             <SecurityScanOutlined style={{
               fontSize: '32px',
               color: '#00f5ff',
@@ -83,9 +89,10 @@ const App: React.FC = () => {
             <Title level={3} className="cyber-title" style={{ margin: 0 }}>
               IPTABLES MANAGER
             </Title>
-          </div>
+          </a>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <VersionInfo />
             <span className="live-indicator">System Online</span>
             
             <Tooltip title={showScanline ? 'Hide Scanline' : 'Show Scanline'}>

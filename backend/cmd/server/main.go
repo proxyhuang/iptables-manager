@@ -44,6 +44,7 @@ func main() {
 	statsWSHandler := handlers.NewStatsWSHandler(statsService, authService)
 	rulesWSHandler := handlers.NewRulesWSHandler(iptablesService, authService)
 	authHandler := handlers.NewAuthHandler(authService)
+	systemHandler := handlers.NewSystemHandler()
 
 	// Create router
 	router := api.NewRouter(
@@ -53,6 +54,7 @@ func main() {
 		statsWSHandler,
 		rulesWSHandler,
 		authHandler,
+		systemHandler,
 		authService,
 	)
 

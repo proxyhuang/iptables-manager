@@ -19,9 +19,13 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 COPY backend/ ./
 
 # Build with cache for Go build cache
+ARG VERSION=dev
+ARG COMMIT=none
+ARG BUILD_TIME=unknown
+
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server ./cmd/server/main.go
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X 'iptables-web-manager/internal/version.Version=${VERSION}' -X 'iptables-web-manager/internal/version.Commit=${COMMIT}' -X 'iptables-web-manager/internal/version.BuildTime=${BUILD_TIME}'" -o /server ./cmd/server/main.go
 
 # Final stage
 FROM alpine:latest

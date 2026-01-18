@@ -5,6 +5,10 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.backend
+      args:
+        VERSION: ${VERSION:-dev}
+        COMMIT: ${COMMIT:-none}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
     image: ${REGISTRY:-docker.io}/${NAMESPACE:-proxyhuang}/iptables-manager-backend:${VERSION:-latest}
     container_name: iptables-backend
     privileged: true
@@ -25,6 +29,10 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.frontend
+      args:
+        VERSION: ${VERSION:-dev}
+        COMMIT: ${COMMIT:-none}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
     image: ${REGISTRY:-docker.io}/${NAMESPACE:-proxyhuang}/iptables-manager-frontend:${VERSION:-latest}
     container_name: iptables-frontend
     network_mode: host
