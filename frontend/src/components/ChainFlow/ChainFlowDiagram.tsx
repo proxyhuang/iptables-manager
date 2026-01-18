@@ -129,6 +129,9 @@ export const ChainFlowDiagram: React.FC = () => {
   const [zoom, setZoom] = useState(100);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const svgContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
     const handleFullScreenChange = () => {
       setIsFullScreen(!!document.fullscreenElement);
     };
