@@ -745,8 +745,10 @@ export const RuleList: React.FC = () => {
             setTableFilters(filters);
           }}
           pagination={{
-            pageSize: 20,
+            defaultPageSize: 20,
             showSizeChanger: true,
+            pageSizeOptions: ['10', '20', '50', '100', '200'],
+            showQuickJumper: true,
             showTotal: (total, range) => (
               <span style={{ color: 'var(--cyber-text-secondary)' }}>
                 Showing {range[0]}-{range[1]} of {total} rules
