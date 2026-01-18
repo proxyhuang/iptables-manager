@@ -122,21 +122,21 @@ const App: React.FC = () => {
                     key: '2',
                     label: (
                       <span style={{ padding: '0 8px' }}>
-                        <span style={{ marginRight: 8 }}>+</span>
-                        Add Rule
+                        <ApartmentOutlined style={{ marginRight: 8 }} />
+                        Rule Flow
                       </span>
                     ),
-                    children: <RuleForm />
+                    children: <ChainFlowDiagram />
                   },
                   {
                     key: '3',
                     label: (
                       <span style={{ padding: '0 8px' }}>
-                        <ApartmentOutlined style={{ marginRight: 8 }} />
-                        Chain Flow
+                        <span style={{ marginRight: 8 }}>+</span>
+                        Add Rule
                       </span>
                     ),
-                    children: <ChainFlowDiagram />
+                    children: <RuleForm />
                   }
                 ]}
                 style={{ padding: '0 16px' }}

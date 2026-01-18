@@ -127,10 +127,25 @@ export const ChainFlowDiagram: React.FC = () => {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [viewMode, setViewMode] = useState<'tree' | 'list' | 'diagram'>('diagram');
   const [zoom, setZoom] = useState(100);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
-  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  const svgContainerRef = useRef<HTMLDivElement>(null);
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullScreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  }, []);
+
+  const toggleFullScreen = () => {
+    if (!svgContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      svgContainerRef.current.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
 
   // Calculate chain statistics and relationships
   const { chainStats, chainRelations, customChains, allChains, builtinChainsWithRules } = useMemo(() => {
@@ -730,7 +745,7 @@ export const ChainFlowDiagram: React.FC = () => {
             <div>
               <Title level={4} style={{ margin: 0, color: 'var(--cyber-text-primary)' }}>
                 <ApartmentOutlined style={{ marginRight: 8 }} />
-                IPTables Chain Relationships
+                IPTables Rule Flow
               </Title>
               <Text type="secondary">
                 Click on any chain to view details · {allChains.length} chains, {chainRelations.length} relations
@@ -881,7 +896,10 @@ export const ChainFlowDiagram: React.FC = () => {
                 />
                 <ZoomInOutlined style={{ color: 'var(--cyber-text-muted)' }} />
                 <Text type="secondary" style={{ fontSize: 12, minWidth: 40 }}>{zoom}%</Text>
-                <Button size="small" icon={<FullscreenOutlined />} onClick={fitToContainer}>
+                <Button size="small" icon={<FullscreenOutlined />} onClick={toggleFullScreen}>
+                  {isFullScreen ? 'Exit Full' : 'Fullscreen'}
+                </Button>
+                <Button size="small" onClick={fitToContainer}>
                   Fit
                 </Button>
                 <Button size="small" onClick={resetView}>
