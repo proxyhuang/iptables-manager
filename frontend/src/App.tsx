@@ -1,6 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Layout, Typography, Tabs, Space, Button, ConfigProvider, theme, Tooltip } from 'antd';
-import { LogoutOutlined, SecurityScanOutlined, SunOutlined, MoonOutlined, ApartmentOutlined } from '@ant-design/icons';
+import {
+  LogoutOutlined,
+  SecurityScanOutlined,
+  SunOutlined,
+  MoonOutlined,
+  ApartmentOutlined,
+  EyeOutlined,
+  EyeInvisibleOutlined
+} from '@ant-design/icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { RuleList } from './components/Rules/RuleList';
 import { RuleForm } from './components/Rules/RuleForm';
@@ -19,6 +27,7 @@ const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const { toggleTheme, isDark } = useTheme();
+  const [showScanline, setShowScanline] = useState(true);
 
   const themeConfig = {
     algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
@@ -54,7 +63,7 @@ const App: React.FC = () => {
   return (
     <ConfigProvider theme={themeConfig}>
       {/* Scanning Line Effect */}
-      <div className="scanline-effect" />
+      {showScanline && <div className="scanline-effect" />}
 
       <Layout style={{ minHeight: '100vh', background: 'transparent' }}>
         <Header className="cyber-header" style={{
@@ -78,15 +87,47 @@ const App: React.FC = () => {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <span className="live-indicator">System Online</span>
+            
+            <Tooltip title={showScanline ? 'Hide Scanline' : 'Show Scanline'}>
+              <Button
+                type="text"
+                icon={showScanline ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                onClick={() => setShowScanline(!showScanline)}
+                style={{
+                  color: 'var(--cyber-text-secondary)',
+                  fontSize: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '50%',
+                  background: 'rgba(148, 163, 184, 0.05)',
+                  border: '1px solid rgba(148, 163, 184, 0.1)',
+                  transition: 'all 0.3s ease',
+                }}
+              />
+            </Tooltip>
+
             <Tooltip title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
               <Button
                 type="text"
                 icon={isDark ? <SunOutlined /> : <MoonOutlined />}
                 onClick={toggleTheme}
                 style={{
-                  color: 'var(--cyber-text-primary)',
-                  fontSize: '18px',
+                  color: isDark ? 'var(--cyber-cyan)' : 'var(--cyber-purple)',
+                  fontSize: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: isDark ? 'rgba(0, 245, 255, 0.05)' : 'rgba(168, 85, 247, 0.1)',
+                  border: `1px solid ${isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(168, 85, 247, 0.2)'}`,
+                  transition: 'all 0.3s ease',
                 }}
+                className="theme-toggle-btn"
               />
             </Tooltip>
             <Button

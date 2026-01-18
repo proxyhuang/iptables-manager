@@ -40,15 +40,24 @@ For more Docker options, see [DOCKER-README.md](DOCKER-README.md) and [MAKEFILE-
 
 ## Features
 
-- **Real-time Monitoring**: Live updates of iptables rules and traffic statistics via WebSocket
-- **Rule Management**: Add, delete, and search iptables rules through an intuitive web interface
-- **Dynamic Visualization**:
-  - Real-time traffic charts showing packets and bytes
-  - Animated UI components with smooth transitions
-  - Live statistics cards with automatic updates
-- **History Tracking**: Complete audit trail of all rule changes with timestamps and user information
-- **Advanced Filtering**: Search and filter rules across all tables and chains
-- **Responsive Design**: Built with Ant Design for a modern, professional look
+- **Real-time Monitoring**: Live updates of iptables rules and traffic statistics via WebSocket.
+- **Rule Management**: Add, delete, and search iptables rules through an intuitive web interface.
+- **Advanced Rule Flow Visualization**:
+  - **Diagram View**: Interactive top-down topological graph of chain relationships using a level-based layout to minimize line crossings.
+  - **Traffic Flow**: Color-coded paths indicating traffic flow through different tables (filter, nat, mangle, etc.).
+  - **Dynamic View Modes**: Switch between Diagram, Tree, and List views for chain analysis.
+  - **Chain Details**: Deep-dive into specific chains to view internal rules, packet counts, and traffic volume.
+  - **Fullscreen Mode**: Dedicated fullscreen support for complex diagram analysis.
+- **Live Statistics**:
+  - Real-time traffic charts showing packets and bytes.
+  - Live statistics cards with automatic updates every 2 seconds.
+  - Animated UI components with smooth state transitions.
+- **Modern Cyber UI**:
+  - **Theme Customization**: Professional Dark and Light modes with an enhanced "Cyber Tech" aesthetic.
+  - **Visual Effects**: Toggleable "Scanline" effect for a futuristic terminal feel.
+  - **Responsive Design**: Built with Ant Design 6.0 for a seamless experience across desktop and mobile.
+- **History Tracking**: Complete audit trail of all rule changes with timestamps and user information.
+- **Advanced Filtering**: Powerful search and filter capabilities across all tables, chains, and rule parameters.
 
 ## Technology Stack
 

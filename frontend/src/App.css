@@ -353,6 +353,18 @@
   text-shadow: 0 0 10px var(--cyber-red);
 }
 
+/* Theme Toggle Button Hover */
+.theme-toggle-btn:hover {
+  transform: scale(1.1) rotate(15deg);
+  background: rgba(168, 85, 247, 0.2) !important;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+}
+
+[data-theme="dark"] .theme-toggle-btn:hover {
+  background: rgba(0, 245, 255, 0.15) !important;
+  box-shadow: 0 0 15px rgba(0, 245, 255, 0.4);
+}
+
 /* Matrix Rain Effect Container (optional) */
 .matrix-bg {
   position: fixed;
