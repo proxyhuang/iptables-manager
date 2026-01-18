@@ -1,7 +1,10 @@
-# Claude Code
+# AI Agents
 .claude/
 .claude*
 CLAUDE.md
+.gemini/
+.gemini*
+GEMINI.md
 
 # Backend
 backend/iptables.db
